@@ -3,20 +3,33 @@
 use Getopt::Long;
 use IO::Socket;
 use File::Find;
+use MIME::Lite;
 
 sub Connection {
-  $serveur = IO::Socket::INET->new( Proto => "tcp",
+  my $serveur = IO::Socket::INET->new( Proto => "tcp",
                                     LocalPort => 1234,
                                     Listen => SOMAXCONN,
                                     Reuse => 1)
   or ErrorManager("Impossible de se connecter sur le port $port en localhost");
+  while (my $connection = $serveur->accept())
+  {
+    my $i = 0;
+    print "Connection $i au serveur\n";
 
+    $serveur->recv($inputServer, 2048);
+    printf $inputServer;
+  }
   #ValidUser("test");
   #ValidPassword("test", "allo");
   #CreateUser("Userfhdj Name", "Password")
-  #SendEmail("test\@reseauglo.ca", "adresse copie", "un sujet", "un message");
-  #ListEmail("test");
-  CheckEmail("un sujet", "test");
+  SendEmail("test\@allo.ca", "qwerty\@reseauglo.ca", "adresse copie", "un sujet", "un message");
+
+  #Avec un courriel qui est pas rapport avec reseauglo.ca
+  #SendEmail("test\@allo.ca", "mouche2332\@hotmail.com", "adresse copie", "un sujet", "un message");
+
+  my @testList = ListEmail("test");
+  say $testList[0];
+  #CheckEmail("un sujet", "test");
   #SendStats("test");
 }
 
@@ -75,13 +88,14 @@ sub CreateUser {
 
 
 sub SendEmail {
-    my $destination = @_[0];
-    my $destinationCC = @_[1];
-    my $subject = @_[2];
-    my $message = @_[3];
+    my $currentUser = @_[0];
+    my $destination = @_[1];
+    my $destinationCC = @_[2];
+    my $subject = @_[3];
+    my $message = @_[4];
 
     #Permet d'enregistrer les emails interne si l'adresse de destination contient @reseauglo.ca
-    if ($destination =~ s/@reseauglo\.ca//g) {
+    if ($destination =~ /\@reseauglo\.ca/) {
       my $emailUsername = substr($destination, 0, index($destination, "@"));
       if (-d $emailUsername) {
         open(my $fh, ">>", $emailUsername."/$subject")
@@ -92,6 +106,8 @@ sub SendEmail {
         say $fh $message;
 
         close($fh);
+
+        return 1;
 
       }
       else {
@@ -105,30 +121,44 @@ sub SendEmail {
 
         close($fh);
 
+        return 1;
       }
 
     }
     else {
-      #Faudrait envoyer en utilisant smtp
+      $msg = MIME::Lite->new(
+        From => $currentUser,
+        To => $destination,
+        Cc => $destination,
+        Subject => $subject,
+        Data => $message
+      );
+
+      $msg->send('smtp', "smtp.ulaval.ca", Timeout=>60);
+      return 1;
     }
 
-  return 1;
+  return 0;
 }
 
-#Au lieu d'envoyer le un liste numeroter je vais envoyer une liste
+#Au lieu d'envoyer une liste numeroter je vais envoyer une liste
 #les numero seront l'index + 1
 sub ListEmail {
   my $user = @_[0];
 
+  my @subjectList;
   opendir (DIR, $user) or ErrorManager("Impossible d'ouvrir le dossier : $user");
   while (my $file = readdir(DIR)) {
     #On ne veut pas afficher le fichier config ni les dossiers
     next if ($file =~ m/config\.txt|^\./);
-    print "$file\n";
+    printf $file."\n";
+    push @subjectList, "$file";
 
   }
 
   close(DIR);
+
+  return $subjectList;
 }
 
 #Devrait recevoir le sujet du courrier et non le numero
