@@ -23,7 +23,7 @@ sub VerificationMotDePasse{
 
 sub CommunicationServer {
   while ($inputServer == ""){
-    client->send(@_[0]);
+    $client->send(@_[0]);
     $client->recv($inputServer, 2048);
   }
   return $inputServer;

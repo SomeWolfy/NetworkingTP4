@@ -11,14 +11,10 @@ sub Connection {
                                     Listen => SOMAXCONN,
                                     Reuse => 1)
   or ErrorManager("Impossible de se connecter sur le port $port en localhost");
-  while (my $connection = $serveur->accept())
-  {
-    my $i = 0;
-    print "Connection $i au serveur\n";
 
-    $serveur->recv($inputServer, 2048);
-    printf $inputServer;
-  }
+
+
+  #endif
   #ValidUser("test");
   #ValidPassword("test", "allo");
   #CreateUser("Userfhdj Name", "Password")
@@ -27,10 +23,29 @@ sub Connection {
   #Avec un courriel qui est pas rapport avec reseauglo.ca
   #SendEmail("test\@allo.ca", "mouche2332\@hotmail.com", "adresse copie", "un sujet", "un message");
 
-  my @testList = ListEmail("test");
-  say $testList[0];
+  #my @testList = ListEmail("test");
+  #foreach $a (@testList){
+  #  print "value of a: $a\n";
+  #}
   #CheckEmail("un sujet", "test");
   #SendStats("test");
+  #
+  while (my $connection = $serveur->accept())
+  {
+    $serveur->recv($inputServer, 2048);
+    printf $inputServer;
+
+    if ($inputServer[0] == 1) {
+      printf "dans 1";
+    }
+
+    if ($inputServer[0] == 2) {
+
+    }
+
+
+  }
+
 }
 
 #Verifie si l'utilisateur existe vraiment en regardant s'il a un dossier a son nom
@@ -151,14 +166,14 @@ sub ListEmail {
   while (my $file = readdir(DIR)) {
     #On ne veut pas afficher le fichier config ni les dossiers
     next if ($file =~ m/config\.txt|^\./);
-    printf $file."\n";
     push @subjectList, "$file";
 
   }
 
   close(DIR);
 
-  return $subjectList;
+  printf "@subjectList[0]\n";
+  return @subjectList;
 }
 
 #Devrait recevoir le sujet du courrier et non le numero
