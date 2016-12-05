@@ -2,23 +2,24 @@
 
 use Getopt::Long;
 use IO::Socket;
+use IO::Socket::INET;
 use File::Find;
 use MIME::Lite;
+
+
+my @subjectList = ();
 
 sub Connection {
   my $serveur = IO::Socket::INET->new( Proto => "tcp",
                                     LocalPort => 1234,
                                     Listen => SOMAXCONN,
                                     Reuse => 1)
-  or ErrorManager("Impossible de se connecter sur le port $port en localhost");
+  or ErrorManager("Impossible de se connecter sur le port 1234 en localhost");
 
-
-
-  #endif
   #ValidUser("test");
   #ValidPassword("test", "allo");
   #CreateUser("Userfhdj Name", "Password")
-  SendEmail("test\@allo.ca", "qwerty\@reseauglo.ca", "adresse copie", "un sujet", "un message");
+  #SendEmail("test\@allo.ca", "qwerty\@reseauglo.ca", "adresse copie", "un sujet", "un message");
 
   #Avec un courriel qui est pas rapport avec reseauglo.ca
   #SendEmail("test\@allo.ca", "mouche2332\@hotmail.com", "adresse copie", "un sujet", "un message");
@@ -29,42 +30,88 @@ sub Connection {
   #}
   #CheckEmail("un sujet", "test");
   #SendStats("test");
-  #
-  while (my $connection = $serveur->accept())
-  {
-    $serveur->recv($inputServer, 2048);
-    printf $inputServer;
+  while(my $connection = $serveur->accept()) {
 
-    if ($inputServer[0] == 1) {
-      printf "dans 1";
+    my $currentUser;
+    printf "Connection Etablie\n";
+
+    while ($inputClient == "quit") {
+      my $inputClient;
+
+      $connection->recv($inputClient, 2048);
+      my $option = substr($inputClient, 0, index($inputClient, ";"));
+      my @arguments = split /;/, $inputClient;
+      splice(@arguments, 0, 1);
+      my $dataToSend = "0";
+      if ($option == "1") {
+        print "dans 1\n";
+        if (ValidUser(@arguments[0]) == "1" || ValidPassword(@arguments[0], @arguments[1]) == "1") {
+          $dataToSend = 1;
+        }
+        $currentUser = @arguments[0];
+      }
+
+        if ($option == "2") {
+            printf "Dans 2\n";
+            if (CreateUser(@arguments[0] == "1")) {
+              $dataToSend = "1";
+            }
+        }
+
+        if ($option == "3") {
+            printf "Dans 3\n";
+
+            if (SendEmail($currentUser, @arguments[0], @arguments[1], @arguments[2], @arguments[3]) == "1") {
+              $dataToSend = "1";
+            }
+        }
+
+        if ($option == "4") {
+            printf "Dans 4\n";
+            $dataToSend = ListEmail($currentUser);
+            $connection->send("$dataToSend\n");
+            $connection->recv($inputClient, 2048);
+            print "Index selectionner : $inputClient\n";
+            print "element choisi : $subjectList[$inputClient]\n";
+            $dataToSend = CheckEmail(@subjectList[$inputClient], $currentUser);
+
+        }
+
+        if ($option == "5") {
+            printf "Dans 5\n";
+            $dataToSend = SendStats($currentUser);
+        }
+
+        if ($option == "6"){
+          break;
+        }
+        print "$dataToSend\n";
+        $connection->send("$dataToSend\n");
+      }
+
+      $connection->close();
     }
-
-    if ($inputServer[0] == 2) {
-
-    }
-
-
-  }
-
 }
+
+
 
 #Verifie si l'utilisateur existe vraiment en regardant s'il a un dossier a son nom
 sub ValidUser {
-  my $user =  @_[0];
+  my $user =  $_[0];
 
   if (-d $user) {
-    return 1;
+    return "1";
   }
   else {
-    return 0;
+    return "0";
   }
 }
 
 #Verifie que le mot de passe passer en paramatere est bien celui a la premiere
 #ligne du fichier config.txt du dossier de l'utilisateur
 sub ValidPassword {
-  my $user = @_[0];
-  my $password = @_[1];
+  my $user = $_[0];
+  my $password = $_[1];
 
   open(my $fh, '<:encoding(UTF-8)', $user."/config.txt")
   or ErrorManager("Impossible d'ouvrir le fichier : $user./config.txt");
@@ -73,19 +120,19 @@ sub ValidPassword {
     chomp $row;
     if($row eq $password) {
       close($fh);
-      return 1;
+      return "1";
     }
     else {
       close($fh);
-      return 0;
+      return "0";
     }
   }
 }
 
 #Permet la creation d'un usager. Verifie si l'usager n'existe pas avant de le creer
 sub CreateUser {
-  my $user = @_[0];
-  my $password = @_[1];
+  my $user = $_[0];
+  my $password = $_[1];
 
   if (ValidUser($user) == 0) {
     mkdir($user, 0755);
@@ -94,20 +141,20 @@ sub CreateUser {
 
     say $fh $password;
     close($fh);
-    return 1;
+    return "1";
   }
   else {
-    return 0;
+    return "0";
   }
 }
 
 
 sub SendEmail {
-    my $currentUser = @_[0];
-    my $destination = @_[1];
-    my $destinationCC = @_[2];
-    my $subject = @_[3];
-    my $message = @_[4];
+    my $currentUser = $_[0];
+    my $destination = $_[1];
+    my $destinationCC = $_[2];
+    my $subject = $_[3];
+    my $message = $_[4];
 
     #Permet d'enregistrer les emails interne si l'adresse de destination contient @reseauglo.ca
     if ($destination =~ /\@reseauglo\.ca/) {
@@ -122,7 +169,7 @@ sub SendEmail {
 
         close($fh);
 
-        return 1;
+        return "1";
 
       }
       else {
@@ -136,7 +183,7 @@ sub SendEmail {
 
         close($fh);
 
-        return 1;
+        return "1";
       }
 
     }
@@ -150,18 +197,18 @@ sub SendEmail {
       );
 
       $msg->send('smtp', "smtp.ulaval.ca", Timeout=>60);
-      return 1;
+      return "1";
     }
 
-  return 0;
+  return "0";
 }
 
 #Au lieu d'envoyer une liste numeroter je vais envoyer une liste
 #les numero seront l'index + 1
 sub ListEmail {
-  my $user = @_[0];
+  my $user = $_[0];
+  @subjectList = ();
 
-  my @subjectList;
   opendir (DIR, $user) or ErrorManager("Impossible d'ouvrir le dossier : $user");
   while (my $file = readdir(DIR)) {
     #On ne veut pas afficher le fichier config ni les dossiers
@@ -172,15 +219,16 @@ sub ListEmail {
 
   close(DIR);
 
-  printf "@subjectList[0]\n";
-  return @subjectList;
+  $stringToSend = join(';', @subjectList);
+  return "$stringToSend;";
 }
 
 #Devrait recevoir le sujet du courrier et non le numero
 sub CheckEmail {
-  my $emailSubject = @_[0];
-  my $user = @_[1];
+  my $emailSubject = $_[0];
+  my $user = $_[1];
   my $message = "";
+  print "email subject : $emailSubject\n";
   open(my $fh, '<:encoding(UTF-8)', "$user/$emailSubject")
   or ErrorManager("Impossible d'ouvrir le fichier : $user/$emailSubject");
 
@@ -191,37 +239,48 @@ sub CheckEmail {
 
   close($fh);
 
-  printf $message;
+  print "le message : $message\n";
+  return $message;
 }
 
 sub SendStats {
-  my $user = @_[0];
+  my $user = $_[0];
   my $total;
   my $emailsNb = 0;
-
+  my @arrayInfo = ();
   find(sub { $total += -s if -f }, $user);
-
-  printf "$total bytes\n";
-
 
   opendir (DIR, $user) or ErrorManager("Impossible d'ouvrir le dossier : $user");
   while (my $file = readdir(DIR)) {
     #On ne veut pas afficher le fichier config ni les dossiers
     next if ($file =~ m/config\.txt|^\./);
-    print "$file\n";
     $emailsNb++;
   }
+
+  push @arrayInfo, $emailsNb;
+  push @arrayInfo, $total;
+
+  close(DIR);
+  opendir (DIR, $user) or ErrorManager("Impossible d'ouvrir le dossier : $user");
+
+  while (my $file = readdir(DIR)) {
+    #On ne veut pas afficher le fichier config ni les dossiers
+    next if ($file =~ m/config\.txt|^\./);
+    push @arrayInfo, "$file";
+    print "$file\n";
+  }
+
   close(DIR);
 
-  printf $emailsNb;
-
+  $stringToSend = join(';', @arrayInfo);
+  return $stringToSend;
 }
 
 sub ErrorManager {
   my $filename = "Error.log";
   open(my $fh, ">>", $filename);
 
-  my $errorMessage = @_[0];
+  my $errorMessage = $_[0];
 
   say $fh "\nErreur : " .$errorMessage." en date et heure du ".localtime();
 
