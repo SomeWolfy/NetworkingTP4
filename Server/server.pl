@@ -16,76 +16,61 @@ sub Connection {
                                     Reuse => 1)
   or ErrorManager("Impossible de se connecter sur le port 1234 en localhost");
 
-  #ValidUser("test");
-  #ValidPassword("test", "allo");
-  #CreateUser("Userfhdj Name", "Password")
-  #SendEmail("test\@allo.ca", "qwerty\@reseauglo.ca", "adresse copie", "un sujet", "un message");
-
-  #Avec un courriel qui est pas rapport avec reseauglo.ca
-  #SendEmail("test\@allo.ca", "mouche2332\@hotmail.com", "adresse copie", "un sujet", "un message");
-
-  #my @testList = ListEmail("test");
-  #foreach $a (@testList){
-  #  print "value of a: $a\n";
-  #}
-  #CheckEmail("un sujet", "test");
-  #SendStats("test");
   while(my $connection = $serveur->accept()) {
 
     my $currentUser;
     printf "Connection Etablie\n";
 
-    while ($inputClient == "quit") {
+    #on loop jusqu'a ce que l'on recois l'instruction de quitter
+    while (1) {
       my $inputClient;
 
       $connection->recv($inputClient, 2048);
+      #On prend le premier parametre de la chaine de caractere comme etant l'option selectionner
       my $option = substr($inputClient, 0, index($inputClient, ";"));
+
+      #On met notre chaine de caractere dans un array et on enleve la premiere option
       my @arguments = split /;/, $inputClient;
       splice(@arguments, 0, 1);
+
+      #Par defaut on va retourner 0
       my $dataToSend = "0";
       if ($option == "1") {
-        print "dans 1\n";
         if (ValidUser(@arguments[0]) == "1" || ValidPassword(@arguments[0], @arguments[1]) == "1") {
           $dataToSend = 1;
         }
+        #On garde l'usager connecter
         $currentUser = @arguments[0];
       }
 
         if ($option == "2") {
-            printf "Dans 2\n";
             if (CreateUser(@arguments[0] == "1")) {
               $dataToSend = "1";
             }
         }
 
         if ($option == "3") {
-            printf "Dans 3\n";
-
             if (SendEmail($currentUser, @arguments[0], @arguments[1], @arguments[2], @arguments[3]) == "1") {
               $dataToSend = "1";
             }
         }
 
         if ($option == "4") {
-            printf "Dans 4\n";
             $dataToSend = ListEmail($currentUser);
             $connection->send("$dataToSend\n");
             $connection->recv($inputClient, 2048);
-            print "Index selectionner : $inputClient\n";
-            print "element choisi : $subjectList[$inputClient]\n";
             $dataToSend = CheckEmail(@subjectList[$inputClient], $currentUser);
 
         }
 
         if ($option == "5") {
-            printf "Dans 5\n";
             $dataToSend = SendStats($currentUser);
         }
 
         if ($option == "6"){
-          break;
+          last;
         }
-        print "$dataToSend\n";
+
         $connection->send("$dataToSend\n");
       }
 
@@ -219,6 +204,7 @@ sub ListEmail {
 
   close(DIR);
 
+  #On convertie notre array en string pour reussir a l'envoyer
   $stringToSend = join(';', @subjectList);
   return "$stringToSend;";
 }
@@ -228,7 +214,6 @@ sub CheckEmail {
   my $emailSubject = $_[0];
   my $user = $_[1];
   my $message = "";
-  print "email subject : $emailSubject\n";
   open(my $fh, '<:encoding(UTF-8)', "$user/$emailSubject")
   or ErrorManager("Impossible d'ouvrir le fichier : $user/$emailSubject");
 
@@ -239,7 +224,6 @@ sub CheckEmail {
 
   close($fh);
 
-  print "le message : $message\n";
   return $message;
 }
 
@@ -267,7 +251,6 @@ sub SendStats {
     #On ne veut pas afficher le fichier config ni les dossiers
     next if ($file =~ m/config\.txt|^\./);
     push @arrayInfo, "$file";
-    print "$file\n";
   }
 
   close(DIR);
