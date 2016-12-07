@@ -1,10 +1,7 @@
 #!/usr/bin/env/ perl
 
-#{}
-#<>
-#
-
 use IO::Socket::INET;
+use Digest::MD5 qw(md5_hex);
 
 my $nomUtilisateur = "";
 my $motDePasse = "";
@@ -13,11 +10,12 @@ my $destionationIp = "localhost";
 my $port = "1234";
 my $client = IO::Socket::INET->new(Proto => "tcp", PeerAddr => "localhost", PeerPort => 1234) or die;
 my $dataList = ();
+my $hash = "";
 
 sub VerificationMotDePasse{
   $motDePasse = <STDIN>;
-  if ($motDePasse !=~ /\S+/ && $motDePasse !=~ /\d+/ && $motDePasse !=~ /\D+/){
-    print "Veuillez entrer un mot de passe contenant\nau moins un chiffre, une lettre et non vide : ";
+  if (not (($motDePasse =~ /\S+/) && ($motDePasse !=~ /\d+/) && ($motDePasse !=~ /\D+/))){
+    print "Veuillez entrer un mot de passe contenant\nau moins un chiffre, une lettre et non vide :\n";
     VerificationMotDePasse();
   }
 
@@ -50,12 +48,14 @@ sub ErrorManager {
 sub Connection {
   @dataList = ();
   push @dataList, "1";
-  print "Nom d'utilisateur :";
+  print "Nom d'utilisateur :\n";
   $nomUtilisateur = <STDIN>;
   push @dataList, $nomUtilisateur;
-  print "Mot de passe :";
+  print "Mot de passe :\n";
   $motDePasse = <STDIN>;
-  push @dataList, $motDePasse;
+  $modeDePasse = VerificationMotDePasse();
+  $hash = md5_hex($modeDePasse);
+  push @dataList, $hash;
   if (CommunicationServer(@dataList) == "0"){
     print "Le nom d'utilisateur et/ou mot de passe n'existent pas.\n";
     Connection();
@@ -65,13 +65,15 @@ sub Connection {
 sub CreateAccount {
   @dataList = ();
   push @dataList, "2";
-  print "Entrez un nom d'utilisateur :";
+  print "Entrez un nom d'utilisateur :\n";
   $nomUtilisateur = <STDIN>;
   push @dataList, $nomUtilisateur;
-  print "Entrez un mot de passe (Doit au moins contenir\nun chiffre et une lettre) :";
-  my $motDePasse = VerificationMotDePasse();
+  print "Entrez un mot de passe (Doit au moins contenir\nun chiffre et une lettre) :\n";
+  $motDePasse = VerificationMotDePasse();
+  $hash = md5_hex($motDePasse);
+  push @dataList, $hash;
   if (CommunicationServer(@dataList) == "0"){
-    print "Le nom d'utilisateur et/ou mot de passe est déjà en utilisation.\nVeuillez en choisir d'autres.";
+    print "Le nom d'utilisateur et/ou mot de passe est déjà en utilisation.\nVeuillez en choisir d'autres.\n";
     CreateAccount();
   }
 }
@@ -101,13 +103,13 @@ sub MainMenu {
   my $input = <STDIN>;
 
   if ($input == "1"){
-    print "Entrez l'adresse de destination : ";
+    print "Entrez l'adresse de destination :\n";
     my $destAddr = <STDIN>;
-    print "Entrez l'adresse de copie conforme : ";
+    print "Entrez l'adresse de copie conforme :\n";
     my $ccAddr = <STDIN>;
-    print "Entrez le sujet de votre email : ";
+    print "Entrez le sujet de votre email :\n";
     my $subject = <STDIN>;
-    print "Entrez le corps de votre email : ";
+    print "Entrez le corps de votre email :\n";
     my $body = <STDIN>;
     my @emailInfos = ("3",$destAddr,$ccAddr,$subject,$body);
     CommunicationServer(@emailInfos);
@@ -120,14 +122,11 @@ sub MainMenu {
 	for(my $i = 0; $i < $#emailList; $i++){
 	  print "$i $emailList[$i]\n";
 	}
-	print "Entrez le numéro du email que vous voulez lire : ";
+	print "Entrez le numéro du email que vous voulez lire :\n";
 	$input = <STDIN>;
 	print CommunicationServer($input);
 	print "Entrez nimporte quoi pour revenir au menu principal\n";
-	$input = "";
-	while ($input == ""){
-	   $input = <STDIN>;
-	}
+	$input = <STDIN>;
     MainMenu();
   }
 
@@ -139,10 +138,7 @@ sub MainMenu {
     }
 
 	print "Entrez nimporte quoi pour revenir au menu principal\n";
-	$input = "";
-	while ($input == ""){
-	   $input = <STDIN>;
-	}
+	$input = <STDIN>;
     MainMenu();
   }
 
