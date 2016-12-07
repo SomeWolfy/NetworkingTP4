@@ -147,8 +147,8 @@ sub MainMenu {
   }
 
   if ($input == "4"){
+    CommunicationServer("6");
     $client->close();
-    die;
   }
 }
 
