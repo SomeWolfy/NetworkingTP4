@@ -1,4 +1,4 @@
-#!/usr/bin/env/ perl
+﻿#!/usr/bin/env/ perl
 
 use IO::Socket::INET;
 use Digest::MD5 qw(md5_hex);
@@ -51,8 +51,8 @@ sub Connection {
   push @dataList, $nomUtilisateur;
   print "Mot de passe :\n";
   $motDePasse = <STDIN>;
-  $modeDePasse = VerificationMotDePasse();
-  $hash = md5_hex($modeDePasse);
+  $motDePasse = VerificationMotDePasse();
+  $hash = md5_hex($motDePasse);
   push @dataList, $hash;
   if (CommunicationServer(@dataList) == "0"){
     print "Le nom d'utilisateur et/ou mot de passe n'existent pas.\n";
