@@ -36,7 +36,7 @@ sub Connection {
       #Par defaut on va retourner 0
       my $dataToSend = "0";
       if ($option == "1") {
-        if (ValidUser(@arguments[0]) == "1" || ValidPassword(@arguments[0], @arguments[1]) == "1") {
+        if (ValidUser(@arguments[0]) == "1" && ValidPassword(@arguments[0], @arguments[1]) == "1") {
           $dataToSend = 1;
         }
         #On garde l'usager connecter
@@ -44,7 +44,7 @@ sub Connection {
       }
 
         if ($option == "2") {
-            if (CreateUser(@arguments[0] == "1")) {
+            if (CreateUser(@arguments[0], @arguments[1]) == "1") {
               $dataToSend = "1";
             }
         }
@@ -104,6 +104,8 @@ sub ValidPassword {
   while (my $row = <$fh>) {
     chomp $row;
     if($row eq $password) {
+      print "Password : $password\n";
+      print "fichier :  $row\n";
       close($fh);
       return "1";
     }

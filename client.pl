@@ -14,7 +14,7 @@ my $hash = "";
 
 sub VerificationMotDePasse{
   $motDePasse = <STDIN>;
-  if (not (($motDePasse =~ /\S+/) && ($motDePasse !=~ /\d+/) && ($motDePasse !=~ /\D+/))){
+  if (not (($motDePasse =~ /\S+/) && ($motDePasse =~ /\d+/) && ($motDePasse =~ /\D+/))){
     print "Veuillez entrer un mot de passe contenant\nau moins un chiffre, une lettre et non vide :\n";
     VerificationMotDePasse();
   }
@@ -24,11 +24,9 @@ sub VerificationMotDePasse{
 
 sub CommunicationServer {
   my $array = join(';', @_);
-  print "result test : $array\n";
   $array =~ s/\r|\n|\r\n//g;
   $client->send("$array\n");
   $client->recv($inputServer, 2048);
-  print "$inputServer\n";
   return $inputServer;
 }
 
@@ -79,8 +77,6 @@ sub CreateAccount {
 }
 
 sub ConnectionMenu {
-#Tentative de connection au serveur
-    #$client = IO::Socket::INET->new(Proto => "tcp", PeerAddr => 'localhost', PeerPort => 1234) or die;
   print "Menu de connection\n1. Se connecter\n2. Créer un compte\n";
   my $input = <STDIN>;
 
