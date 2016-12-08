@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env/ perl
+#!/usr/bin/env/ perl
 
 use IO::Socket::INET;
 use Digest::MD5 qw(md5_hex);
@@ -14,7 +14,7 @@ my $hash = "";
 
 sub VerificationMotDePasse{
   $motDePasse = <STDIN>;
-  if (not (($motDePasse =~ /\S+/) && ($motDePasse =~ /\d+/) && ($motDePasse =~ /\D+/))){
+  if (not (($motDePasse =~ /\S+/) && ($motDePasse !=~ /\d+/) && ($motDePasse !=~ /\D+/))){
     print "Veuillez entrer un mot de passe contenant\nau moins un chiffre, une lettre et non vide :\n";
     VerificationMotDePasse();
   }
@@ -50,9 +50,8 @@ sub Connection {
   $nomUtilisateur = <STDIN>;
   push @dataList, $nomUtilisateur;
   print "Mot de passe :\n";
-  $motDePasse = <STDIN>;
-  $motDePasse = VerificationMotDePasse();
-  $hash = md5_hex($motDePasse);
+  $modeDePasse = VerificationMotDePasse();
+  $hash = md5_hex($modeDePasse);
   push @dataList, $hash;
   if (CommunicationServer(@dataList) == "0"){
     print "Le nom d'utilisateur et/ou mot de passe n'existent pas.\n";
@@ -114,7 +113,6 @@ sub MainMenu {
 
   if ($input == "2"){
     my @emailList = split /;/, CommunicationServer("4");
-    print "size array : $#emailList\n";
 	for(my $i = 0; $i < $#emailList; $i++){
 	  print "$i $emailList[$i]\n";
 	}

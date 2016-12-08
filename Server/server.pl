@@ -105,9 +105,6 @@ sub ValidPassword {
 
   while (my $row = <$fh>) {
     chomp $row;
-    print "Password : $password\n";
-    print "fichier :  $row\n";
-
     if($row eq $password) {
       close($fh);
       return "1";
